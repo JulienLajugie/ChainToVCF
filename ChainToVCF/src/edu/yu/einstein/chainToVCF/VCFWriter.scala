@@ -5,15 +5,15 @@ class VCFWriter {
   def getLine(variant: Variant): String = {
     variant match {
       case Insertion(chromo, pos, length) =>
-        //chromo + "\t" + pos + "\t" + VCFWriter.defaultID +
-        "TODO"
+        chromo + "\t" + pos + "\t" + VCFWriter.defaultID + "\t" + VCFWriter.defautlRef + "\n" + 
+        VCFWriter.insertionTag + "\n" + VCFWriter.defaultQualityField + "\n" + VCFWriter.defaultFilterField + "\n" +
+        VCFWriter.defaultInfoPattern.format("INS", pos, length)
       case Deletion(chromo, pos, length) =>
         "TODO"
       case SNP(chromo, pos) =>
         "TODO"
     }
   }
-  
 }
 
 object VCFWriter {
