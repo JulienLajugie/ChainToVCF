@@ -48,8 +48,8 @@ class ChainReader(chainFilePath: String) {
     // extract a chain and print it
     val splitLine = chaineLine.split(" ")
     val tChr = splitLine(ChainReader.refChr)
+    val qChr = splitLine(ChainReader.queryChr)
     if (!extractedChr.contains(tChr)) {
-      val qChr = splitLine(ChainReader.queryChr)
       val tStrand = splitLine(ChainReader.refStrand)
       val qStrand = splitLine(ChainReader.queryStrand)
       if (tChr.equals(qChr) && tStrand.equals(qStrand)) {
@@ -62,11 +62,11 @@ class ChainReader(chainFilePath: String) {
           VCFWriter.printVariant(new Insertion(tChr, tPos, qPos - tPos))
           //VCFWriter.printVariant(new Deletion(tChr, tPos, qPos - tPos))
         }
-        extractChainContent(tChr, tPos)
+        extractChainContent(qChr, tPos)
       }
       extractedChr
     }
-    extractedChr + tChr
+    extractedChr + qChr
   }
 
   // extract the content (without the header) of a chain a print it
