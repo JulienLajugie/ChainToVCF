@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * *****************************************************************************
  * ChainToVCF
  * Copyright (C) 2014 Albert Einstein College of Medicine
  *
@@ -17,13 +18,15 @@
  * Authors: Julien Lajugie <julien.lajugie@einstein.yu.edu>
  *
  * Website: <https://github.com/JulienLajugie/ChainToVCF>
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package edu.yu.einstein.chainToVCF
 
 import scala.io.Source
 import scala.collection.immutable.HashSet
+import com.beust.jcommander.{ JCommander, Parameter }
 
-class ChainReader(chainFilePath: String) {
+class ChainReader(chainFilePath: String, vcfWriter: VCFWriter) {
 
   val chainLines = Source.fromFile(chainFilePath).getLines
 
@@ -39,7 +42,7 @@ class ChainReader(chainFilePath: String) {
         }
       }
     }
-    VCFWriter.printVCFHeader
+    vcfWriter.printVCFHeader
     chainFileToVCF(new HashSet[String])
   }
 
@@ -56,11 +59,9 @@ class ChainReader(chainFilePath: String) {
         val tPos = Integer.parseInt(splitLine(ChainReader.refPos))
         val qPos = Integer.parseInt(splitLine(ChainReader.queryPos))
         if (tPos > qPos) {
-          VCFWriter.printVariant(new Deletion(tChr, tPos, tPos - qPos))
-          //VCFWriter.printVariant(new Insertion(tChr, tPos, tPos - qPos))
+          vcfWriter.printVariant(new Deletion(tChr, tPos, tPos - qPos))
         } else if (tPos < qPos) {
-          VCFWriter.printVariant(new Insertion(tChr, tPos, qPos - tPos))
-          //VCFWriter.printVariant(new Deletion(tChr, tPos, qPos - tPos))
+          vcfWriter.printVariant(new Insertion(tChr, tPos, qPos - tPos))
         }
         extractChainContent(qChr, tPos)
       }
@@ -80,13 +81,13 @@ class ChainReader(chainFilePath: String) {
         val qPos = Integer.parseInt(splitLine(ChainReader.bodyQueryPos))
         if (tPos != qPos) {
           if (qPos != 0) {
-            VCFWriter.printVariant(new Insertion(chromo, varPos - 1, qPos))
+            vcfWriter.printVariant(new Insertion(chromo, varPos, qPos))
           }
           if (tPos != 0) {
-            VCFWriter.printVariant(new Deletion(chromo, varPos, tPos))
+            vcfWriter.printVariant(new Deletion(chromo, varPos, tPos))
           }
         } else {
-          VCFWriter.printVariant(new SNP(chromo, varPos, 'N', 'N'))
+          vcfWriter.printVariant(new SNP(chromo, varPos + 1, 'N', 'N'))
         }
         extractChainContent(chromo, varPos + tPos)
       }
@@ -94,20 +95,21 @@ class ChainReader(chainFilePath: String) {
   }
 }
 
-
 object ChainReader {
-  /*
-  val refChr        = 2     // chromosome (reference sequence) column in a chain file
-  val refStrand     = 4     // strand (reference sequence) column in a chain file
-  val refPos        = 5     // alignment start position (reference sequence) column in a chain file
-  val refEnd        = 6     // alignment stop position (reference sequence) column in a chain file
-  val queryChr      = 7     // chromosome (query sequence) column in a chain file
-  val queryStrand   = 9     // strand (query sequence) column in a chain file
-  val queryPos      = 10    // alignment start position (query sequence) column in a chain file
 
-  val bodyRefPos    = 1     // the difference between the end of this block and the beginning of the next block (reference sequence)
-  val bodyQueryPos  = 2     // the difference between the end of this block and the beginning of the next block (query sequence)
-*/
+  object Args {
+    @Parameter(names = Array("-h", "--help"), help = true)
+    var help: Boolean = _
+
+    @Parameter(names = Array("-c", "--chain"), description = "Path to the chain file (eg: /home/jlajugie/hg19ToHg38.over.chain)", required = true)
+    var chainFilePath: String = _
+
+    @Parameter(names = Array("-t", "--target"), description = "Name of the target reference genome (eg: hg38)", required = true)
+    var targetReference: String = _
+
+    @Parameter(names = Array("-s", "--source"), description = "Name of the source reference genome (eg: hg19)", required = true)
+    var sourceReference: String = _
+  }
 
   val refChr = 7 // chromosome (reference sequence) column in a chain file
   val refStrand = 9 // strand (reference sequence) column in a chain file
@@ -116,11 +118,18 @@ object ChainReader {
   val queryChr = 2 // chromosome (query sequence) column in a chain file
   val queryStrand = 4 // strand (query sequence) column in a chain file
   val queryPos = 5 // alignment start position (query sequence) column in a chain file
-
   val bodyRefPos = 2 // the difference between the end of this block and the beginning of the next block (reference sequence)
   val bodyQueryPos = 1 // the difference between the end of this block and the beginning of the next block (query sequence)
 
   def main(args: Array[String]): Unit = {
-    new ChainReader("/home/jlajugie/Downloads/hg19ToHg38.over.chain").printChainFileAsVCF
+    val params = new JCommander(Args, args.toArray: _*)
+    if (Args.help) {
+      params.setProgramName("scala -classpath ChainToVCF.jar edu.yu.einstein.chainToVCF.ChainReader")
+      params.usage
+    } else {
+      val vcfWriter = new VCFWriter(Args.targetReference, Args.sourceReference)
+      val chainReader = new ChainReader(Args.chainFilePath, vcfWriter)
+      chainReader.printChainFileAsVCF
+    }
   }
 }
