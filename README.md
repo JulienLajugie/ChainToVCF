@@ -3,7 +3,7 @@ ChainToVCF
 
 Convert a chain file into a VCF file.
 
-Usage: scala -classpath ChainToVCF.jar edu.yu.einstein.chainToVCF.ChainReader [options]
+Usage: scala -classpath ChainToVCF.jar edu.yu.einstein.chainToVCF.ChainToVCF [options]
   Options:
   * -c, --chain
        Path to the chain file (eg: ./hg19ToHg38.over.chain)
