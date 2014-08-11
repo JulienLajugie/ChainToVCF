@@ -34,6 +34,7 @@ class VCFWriter(val refName: String, val altName: String) {
   private val defaultSNPInfoPattern = "END=%d;SVLEN=1"
   private val defaultFormatField = "GT"
   private val defaultGTField = "1/1"
+  private val defaultSNPGTField = "0/1"
   private val header =
     "##fileformat=VCFv4.0\n" +
       "##fileDate=June 08, 2011\n" +
@@ -60,7 +61,7 @@ class VCFWriter(val refName: String, val altName: String) {
       case SNP(chromo, pos, ref, alt) =>
         chromo + columnDelimiter + pos + columnDelimiter + defaultID + columnDelimiter + ref + columnDelimiter +
           alt + columnDelimiter + defaultQualityField + columnDelimiter + defaultFilterField + columnDelimiter +
-          defaultSNPInfoPattern.format(pos) + columnDelimiter + defaultFormatField + columnDelimiter + defaultGTField
+          defaultSNPInfoPattern.format(pos) + columnDelimiter + defaultFormatField + columnDelimiter + defaultSNPGTField
     }
   }
 
@@ -70,5 +71,18 @@ class VCFWriter(val refName: String, val altName: String) {
 
   def printVariant(variant: Variant): Unit = {
     println(getVCFLine(variant))
+  }
+
+  def printVariantList(variantList: VariantList): Unit = {
+    printVCFHeader()
+    val variants = variantList.variants
+    variants.keys.toList.sorted foreach {
+      x =>
+        {
+          variants(x).sortWith(_.position < _.position) foreach {
+            printVariant(_)
+          }
+        }
+    }
   }
 }
